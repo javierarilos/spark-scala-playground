@@ -19,11 +19,30 @@ object First {
     val conf = new SparkConf().setAppName("First-self-contained")
     val sc = new SparkContext(conf)
 
-    val data = sc.textFile(fPath)
-    val nLines = data.count()
+    val lines = sc.textFile(fPath)
+
+    val nLines = lines.count()
+    val nChars = lines.map(_.length).reduce(_ + _)
+    val wordCount = lines.flatMap(_.split(" "))
+                          .map(_.replace(".", ""))
+                          .map(_.replace(",", ""))
+                          .map(_.replace("\n", ""))
+                          .map(_.toLowerCase())
+                          .map(w => (w, 1))
+                          .reduceByKey(_+_)
+                          .sortBy[Int](_._2, ascending=false)
+                          .collect()
     println("=========")
-    println(s"======== File $fPath has $nLines lines")
+    println(s"======== File $fPath has:")
+    println(s"======== $nLines lines")
+    println(s"======== $nChars characters")
+    println(s"======== wordCount: ")
+    wordCount.foreach[Unit](t => println(s"   ${t._1} => ${t._2}"))
     println("=========")
+
+
+
+
     sc.stop()
   }
 
